@@ -1,0 +1,6 @@
+#!/bin/bash
+# cron runs proxmox-daily-update (subscription/APT status + ACME cert renewal) daily.
+ln -sf /usr/lib/x86_64-linux-gnu/proxmox-backup/proxmox-daily-update /etc/cron.daily/
+
+echo "CRON: Starting..."
+exec cron -f

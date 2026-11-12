@@ -1,0 +1,28 @@
+#!/bin/bash
+# Privileged API daemon (root). Fixes ownership/modes on the persisted volumes, then execs.
+
+if [[ -n "$TZ" ]]; then
+  echo "$TZ" > /etc/timezone
+fi
+
+for d in /etc/proxmox-backup /var/lib/proxmox-backup /var/log/proxmox-backup; do
+  mkdir -p "$d"
+  chown backup:backup "$d"
+  chmod 700 "$d"
+done
+
+# Stale lock files from an unclean shutdown block the daemons.
+rm -f /etc/proxmox-backup/.*.lck /etc/proxmox-backup/*.lock
+
+for mp in /etc/proxmox-backup /var/lib/proxmox-backup /var/log/proxmox-backup; do
+  if ! mountpoint -q "$mp"; then
+    echo "WARNING: '$mp' should be a volume; PBS state there is lost when the container is recreated."
+  fi
+done
+
+if ! mountpoint -q /run; then
+  echo "WARNING: '/run' should be a tmpfs mount; PBS authentication may not work correctly."
+fi
+
+echo "API: Starting..."
+exec /usr/lib/x86_64-linux-gnu/proxmox-backup/proxmox-backup-api

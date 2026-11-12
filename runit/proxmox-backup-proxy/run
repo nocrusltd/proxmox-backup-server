@@ -1,0 +1,12 @@
+#!/bin/bash
+# Unprivileged proxy (port 8007). Waits for the API daemon to create csrf.key on first boot;
+# runit restarts this service until it exists.
+
+if [[ ! -e /etc/proxmox-backup/csrf.key ]]; then
+  echo "PROXY: waiting for proxmox-backup-api to initialise /etc/proxmox-backup"
+  sleep 1
+  exit 1
+fi
+
+echo "PROXY: Starting..."
+exec chpst -u backup:backup /usr/lib/x86_64-linux-gnu/proxmox-backup/proxmox-backup-proxy

@@ -1,0 +1,4 @@
+#!/bin/bash
+# SIGINT to any service stops the whole container (runsvdir is PID 1).
+echo 'Received SIGINT...'
+kill 1
