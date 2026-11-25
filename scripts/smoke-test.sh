@@ -6,7 +6,10 @@ IMAGE="$1"; EXPECTED="$2"; NAME="pbs-smoke-$$"
 cleanup() { docker rm -f "$NAME" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 
-docker run -d --name "$NAME" --tmpfs /run \
+# --dns-search . : on first boot PBS appends the resolver's search domain to the hostname
+# for its self-signed certificate's CN. A long search domain on the host (seen on hosted CI
+# runners) pushes the CN past the X.509 limit of 64 characters and the API never starts.
+docker run -d --name "$NAME" --tmpfs /run --dns-search . \
   -v /etc/proxmox-backup -v /var/lib/proxmox-backup -v /var/log/proxmox-backup \
   -p 127.0.0.1:18007:8007 "$IMAGE" >/dev/null
 
