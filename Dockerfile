@@ -41,7 +41,7 @@ RUN set -eux; \
     # it (what the GUI's Repositories panel does). The checks fail the build if the
     # package ever ships the file differently.
     test "$(grep -c '^Types:' /etc/apt/sources.list.d/pbs-enterprise.sources)" = 1; \
-    ! grep -qi '^Enabled:' /etc/apt/sources.list.d/pbs-enterprise.sources; \
+    if grep -qi '^Enabled:' /etc/apt/sources.list.d/pbs-enterprise.sources; then exit 1; fi; \
     echo 'Enabled: false' >> /etc/apt/sources.list.d/pbs-enterprise.sources; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*; \
