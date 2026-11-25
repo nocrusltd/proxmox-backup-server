@@ -27,4 +27,12 @@ out=$(docker exec "$NAME" proxmox-backup-manager versions)
 echo "$out"
 grep -q "proxmox-backup-server ${EXPECTED} running version: ${EXPECTED%-*}" <<<"$out" \
   || { echo "expected proxmox-backup-server ${EXPECTED}"; exit 1; }
+# No enabled apt source may point at the enterprise repository: without a subscription
+# it answers 401 and the daily aptupdate task ends with a warning.
+uris=$(docker exec "$NAME" apt-get update --print-uris)   # lists what would be fetched; fetches nothing
+grep -q 'download.proxmox.com/debian/pbs/dists/trixie/pbs-no-subscription/' <<<"$uris" \
+  || { echo "pbs-no-subscription apt source is not enabled"; exit 1; }
+if grep -q 'enterprise.proxmox.com' <<<"$uris"; then
+  echo "the pbs-enterprise apt source is enabled"; exit 1
+fi
 echo "SMOKE TEST OK"
