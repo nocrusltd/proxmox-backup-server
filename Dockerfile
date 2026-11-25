@@ -38,11 +38,13 @@ RUN set -eux; \
     rm -f /etc/ssh/ssh_host_*; \
     # The package ships the pbs-enterprise apt source enabled. Without a subscription it
     # answers 401, so PBS's daily "aptupdate" task ends with a warning every day. Disable
-    # it (what the GUI's Repositories panel does). The checks fail the build if the
-    # package ever ships the file differently.
-    test "$(grep -c '^Types:' /etc/apt/sources.list.d/pbs-enterprise.sources)" = 1; \
-    if grep -qi '^Enabled:' /etc/apt/sources.list.d/pbs-enterprise.sources; then exit 1; fi; \
+    # it (what the GUI's Repositories panel does), then check the result rather than the
+    # file's layout: apt must no longer plan to fetch from the enterprise repository and
+    # must still plan to fetch pbs-no-subscription (--print-uris fetches nothing).
     echo 'Enabled: false' >> /etc/apt/sources.list.d/pbs-enterprise.sources; \
+    uris="$(apt-get update --print-uris)"; \
+    case "$uris" in *enterprise.proxmox.com*) echo 'pbs-enterprise source still enabled' >&2; exit 1 ;; esac; \
+    case "$uris" in */debian/pbs/dists/trixie/pbs-no-subscription/*) ;; *) echo 'pbs-no-subscription source missing' >&2; exit 1 ;; esac; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*; \
     test "$(dpkg-query -W -f='${Version}' proxmox-backup-server)" = "${PBS_VERSION}"
